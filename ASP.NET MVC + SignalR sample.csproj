@@ -130,6 +130,7 @@
     <Compile Include="Hubs\OperationHub.cs" />
     <Compile Include="Models\Operation.cs" />
     <Compile Include="OperaionContainer\OperationContainer.cs" />
+    <Compile Include="OperaionContainer\TaskDummy.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Startup.cs" />
   </ItemGroup>

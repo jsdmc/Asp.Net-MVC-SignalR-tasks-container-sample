@@ -32,13 +32,23 @@
             }
 
             function addOperationToList(task) {
-                $operationsList.append('<li data-id="' + task.Id + '"><span><b>' + task.Id + '</b></span> ' + task.Name + '<button class="js-remove-operation">Remove</button></li>');
+                return $operationsList.append('<li data-id="' + task.Id + '"><span><b>'
+                    + task.Id + ' </b></span><span class="js-progress">'
+                    + task.Progress + '%</span> '
+                    + task.Name + '<button class="js-cancel-operation">Cancel</button></li>');
             }
 
             //client methods that can be called from server
-            operationsHub.client.updateOperations = updateOperationsList;
-            operationsHub.client.addNewOperation = addOperationToList;
-            operationsHub.client.removeOperation = function (id) {
+            operationsHub.client.progressChanged = function (operation) {
+
+                var $operation = $operationsList.find('[data-id=' + operation.Id + ']');
+                if (!$operation.length) {
+                    addOperationToList(operation).find('.js-progress').html(operation.Progress);
+                } else {
+                    $operation.find('.js-progress').html(operation.Progress);
+                }
+            };
+            operationsHub.client.operationCompleted = function (id) {
                 $operationsList.find('[data-id=' + id + ']').remove();
             };
 
@@ -53,12 +63,12 @@
                     operationsHub.server.runNewOperation();
                 });
 
-                $operationsList.on('click', '.js-remove-operation', function (e) {
+                $operationsList.on('click', '.js-cancel-operation', function (e) {
 
                     var operationId = $(e.target).parent('li').data('id');
 
                     //call server method from client
-                    operationsHub.server.removeOperation(operationId);
+                    operationsHub.server.cancelOperation(operationId);
                 });
             }
 

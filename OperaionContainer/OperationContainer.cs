@@ -5,6 +5,9 @@ using System.Linq;
 using System.Web;
 using Microsoft.AspNet.SignalR;
 using Microsoft.AspNet.SignalR.Hubs;
+using System.Threading.Tasks;
+
+using System.Collections.Concurrent;
 using ASP.NET_MVC___SignalR_sample.Hubs;
 using ASP.NET_MVC___SignalR_sample.Models;
 
@@ -37,7 +40,7 @@ namespace ASP.NET_MVC___SignalR_sample.OperaionContainer
         /// <summary>
         /// Operations storage
         /// </summary>
-        private List<Operation> _operations;
+        ConcurrentDictionary<int, Operation> _operations = new ConcurrentDictionary<int, Operation>();
 
         private readonly Timer _timer;
 
@@ -52,12 +55,10 @@ namespace ASP.NET_MVC___SignalR_sample.OperaionContainer
         {
             Clients = clients;
 
-            _operations = new List<Operation>() {
-                new Operation { Id = ++idCounter, Name = "Saving drafts"},
-                new Operation { Id = ++idCounter, Name = "Pushing online"}
-            };
+            RunNewOperation("Predefined operation 1", TaskDummy.DummyAction);
+            RunNewOperation("Predefined operation 2", TaskDummy.DummyAction);
 
-            _timer = new Timer(UpdateOperations, null, _updateInterval, _updateInterval);
+            //_timer = new Timer(CreateOperation, null, _updateInterval, _updateInterval);
         }
 
         #region Client methods
@@ -68,81 +69,87 @@ namespace ASP.NET_MVC___SignalR_sample.OperaionContainer
         /// <returns></returns>
         public IEnumerable<Operation> GetAllOperations()
         {
-            return _operations;
+            return _operations.Values;
         }
 
         /// <summary>
         /// Client method - add new operation
         /// </summary>
-        public void RunNewOperation()
+        public async Task<Operation> RunNewOperation(string operationName, Action<Operation> action = null)
         {
-            var newOperation = new Operation { Id = ++idCounter, Name = string.Format("New operation") };
+            var operation = new Operation (++idCounter){ Name = operationName ?? string.Format("New operation") };
+            
+            _operations.TryAdd(operation.Id, operation);
 
-            lock (_syncObj)
+            
+            var task = Task.Run(() =>
             {
-                _operations.Add(newOperation);
-            }
+                if (action != null) action(operation);
+                operation.ReportComplete();
 
-            //call client method to run operation
-            Clients.All.addNewOperation(newOperation);
+                _operations.TryRemove(operation.Id, out operation);
+            });
+
+            //Notify clients
+            BroadcastOperationStatus(operation);
+
+            await task;
+
+            return operation;
+        }
+
+        private void BroadcastOperationStatus(Operation job)
+        {
+            job.ProgressChanged += HandleJobProgressChanged;
+            job.Completed += HandleJobCompleted;
+        }
+
+        private void HandleJobCompleted(object sender, EventArgs e)
+        {
+            var operation = (Operation)sender;
+
+            //Notify clients
+            Clients.All.operationCompleted(operation.Id);
+
+            operation.ProgressChanged -= HandleJobProgressChanged;
+            operation.Completed -= HandleJobCompleted;
+        }
+
+        private void HandleJobProgressChanged(object sender, EventArgs e)
+        {
+            var operation = (Operation)sender;
+
+            //Notify clients
+            Clients.All.progressChanged(operation);
         }
 
         /// <summary>
         /// Client method - remove operation
         /// </summary>
         /// <param name="id"></param>
-        public void RemoveOperation(int id)
+        public void CancelOperation(int id)
         {
-            var operationToRemove = _operations.FirstOrDefault(x => x.Id == id);
+            var operationToRemove = GetOperation(id);
 
-            RemoveOperationFromList(operationToRemove);
+            if (operationToRemove != null)
+            {
+                operationToRemove.Cancel();
+            }
+        }
+
+        public Operation GetOperation(int id)
+        {
+            Operation result;
+            return _operations.TryGetValue(id, out result) ? result : null;
         }
 
         #endregion
 
-        #region Private methods
 
-        /// <summary>
-        /// Remove operation from list
-        /// </summary>
-        /// <param name="operation"></param>
-        private void RemoveOperationFromList(Operation operation)
+        public void CreateOperation(object state)
         {
-            lock (_syncObj)
-            {
-                _operations.Remove(operation);
-            }
-            //call client method to remove operation
-            Clients.All.removeOperation(operation.Id);
+            var operation = RunNewOperation(null, TaskDummy.DummyAction);
         }
 
-        /// <summary>
-        /// Randomly Add or Remove operation
-        /// </summary>
-        /// <param name="state"></param>
-        private void UpdateOperations(object state)
-        {
-            // Randomly choose whether to update this stock or not
-            var random = new Random();
-
-            lock (_syncObj)
-            {
-                //add or remove operation
-                if (random.Next(100) < 50)
-                {
-                   RunNewOperation();
-
-                } else if (_operations.Count > 0)
-                {
-                    //remove random element from list
-                    var indexToRemove = random.Next(_operations.Count);
-                    var operationToRemove = _operations.ElementAt(indexToRemove);
-
-                    RemoveOperationFromList(operationToRemove);
-                }
-            }
-        }
-
-        #endregion
     }
 }

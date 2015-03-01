@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.AspNet.SignalR;
 using ASP.NET_MVC___SignalR_sample.OperaionContainer;
 using ASP.NET_MVC___SignalR_sample.Models;
@@ -27,14 +29,16 @@ namespace ASP.NET_MVC___SignalR_sample.Hubs
             return _operationContainer.GetAllOperations();
         }
 
-        public void RunNewOperation()
+        public async Task<string> RunNewOperation()
         {
-            _operationContainer.RunNewOperation();
+            var operation = await _operationContainer.RunNewOperation("Custom task", TaskDummy.DummyAction);
+
+            return "task result";
         }
 
-        public void RemoveOperation(int id)
+        public void CancelOperation(int id)
         {
-            _operationContainer.RemoveOperation(id);
+            _operationContainer.CancelOperation(id);
         }
     }
 }
