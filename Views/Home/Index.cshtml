@@ -34,7 +34,7 @@
             function addOperationToList(task) {
                 return $operationsList.append('<li data-id="' + task.Id + '"><span><b>'
                     + task.Id + ' </b></span><span class="js-progress">'
-                    + task.Progress + '%</span> '
+                    + task.Progress + '</span>% &nbsp;'
                     + task.Name + '<button class="js-cancel-operation">Cancel</button></li>');
             }
 
