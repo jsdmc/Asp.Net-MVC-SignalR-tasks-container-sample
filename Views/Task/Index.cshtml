@@ -1,0 +1,28 @@
+﻿<h2>Task view</h2>
+
+@Html.ActionLink("Go to Home page", "Index", "Home")
+
+<input type="text" id="taskName" />
+
+<button id="runTask">Run task</button>
+
+@section scripts {
+    <!--Script references. -->
+    <!--Reference the jQuery library. -->
+    <script src="~/Scripts/jquery-2.1.3.js"></script>
+
+    <script>
+        $('#runTask').on('click', function () {
+            var taskName = $('#taskName').val();
+
+            $.ajax({
+                url: '@Url.Action("RunTask", "Task")',
+                data: {
+                    taskName: taskName
+                }
+            }).done(function (data) {
+                var taskId = data.taskId;
+            });
+        });
+    </script>
+}

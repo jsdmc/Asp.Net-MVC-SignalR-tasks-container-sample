@@ -11,7 +11,10 @@ namespace ASP.NET_MVC___SignalR_sample
         {
             app.MapSignalR();
 
-            //ThreadPool.SetMinThreads(7,7);
+            int t1, t2;
+            //ThreadPool.GetMinThreads(out t1, out t2);
+
+            ThreadPool.SetMinThreads(7,7);
         }
     }
 }

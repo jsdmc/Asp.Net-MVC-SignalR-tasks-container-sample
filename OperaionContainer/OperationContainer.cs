@@ -55,8 +55,8 @@ namespace ASP.NET_MVC___SignalR_sample.OperaionContainer
         {
             Clients = clients;
 
-            RunNewOperation("Predefined operation 1", TaskDummy.DummyAction);
-            RunNewOperation("Predefined operation 2", TaskDummy.DummyAction);
+            //RunNewOperation("Predefined operation 1", TaskDummy.DummyAction);
+            //RunNewOperation("Predefined operation 2", TaskDummy.DummyAction);
 
             //_timer = new Timer(CreateOperation, null, _updateInterval, _updateInterval);
         }

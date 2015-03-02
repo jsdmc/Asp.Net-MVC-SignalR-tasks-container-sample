@@ -29,9 +29,9 @@ namespace ASP.NET_MVC___SignalR_sample.Hubs
             return _operationContainer.GetAllOperations();
         }
 
-        public async Task<string> RunNewOperation()
+        public string RunNewOperation()
         {
-            var operation = await _operationContainer.RunNewOperation("Custom task", TaskDummy.DummyAction);
+            var operation =  _operationContainer.RunNewOperation("Custom task", TaskDummy.DummyAction);
 
             return "task result";
         }
